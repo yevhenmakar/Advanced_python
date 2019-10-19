@@ -1,30 +1,26 @@
 import time
 
 
-def decorator(num_of_repeats=1):
-
-    def actual_decorator(func):
-
+def decorator(number_of_repeats=0):
+    def outer(func):
         def wrapper(*args, **kwargs):
-
             results = []
-            for i in range(num_of_repeats):
-                execution_time = time.time()
+            for i in range(number_of_repeats):
+                start = time.time()
                 result = func(*args, **kwargs)
-                print(execution_time)
+                print('Execution time is: ', time.time() - start)
                 results.append(result)
-                final_time = execution_time - time.time()
-            return results, func.__name__, final_time
+            return results, func.__name__
         return wrapper
-    return actual_decorator
+    return outer
 
 
 @decorator(10)
 def say_hello(name):
-    pass
+    greetings = f'Hello, {name}'
+    return greetings
 
 
 some_func = say_hello('Alex')
 
-print(f'Execution time {some_func[2]}')
 print(f'Function name "{some_func[1]}"')
