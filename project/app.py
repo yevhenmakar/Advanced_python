@@ -3,12 +3,30 @@ from telebot.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton
 )
+from flask import Flask, request, abort
 import config
 import keyboards
 from models import models
 from keyboards import ReplyKB
 
 bot = telebot.TeleBot(config.TOKEN)
+app = Flask(__name__)
+
+
+@app.route('/', methods=['GET', 'HEAD'])
+def index():
+    return ''
+
+
+@app.route('/', methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        abort(403)
 
 
 @bot.message_handler(commands=['start'])
@@ -26,8 +44,8 @@ def show_categories(message):
     :param message:
     :return: listed root categories
     """
-    kb = keyboards.InlineKB(key='root', lookup_field='id', named_arg='category',)
-    bot.send_message(message.chat.id, "Выберите категорию", reply_markup=kb.generate_kb())
+    kb = keyboards.InlineKB(key='root', lookup_field='id', named_arg='category', )
+    bot.send_message(message.chat.id, "Choose category", reply_markup=kb.generate_kb())
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split('_')[0] == 'category')
@@ -38,6 +56,7 @@ def show_products_or_sub_category(call):
     """
     obj_id = call.data.split('_')[1]
     category = models.Category.objects(id=obj_id).get()
+
     if category.is_parent:
         kb = keyboards.InlineKB(iterable=category.subcategory, lookup_field='id', named_arg='category')
 
@@ -59,11 +78,11 @@ def go_back(call):
     category = models.Category.objects(id=obj_id).get()
 
     if category.is_root:
-        kb = keyboards.InlineKB(key='root', lookup_field='id', named_arg='category',)
+        kb = keyboards.InlineKB(key='root', lookup_field='id', named_arg='category', )
         kb.generate_kb()
 
     else:
-        kb = keyboards.InlineKB(iterable=category.parent.subcategory, lookup_field='id', named_arg='category',)
+        kb = keyboards.InlineKB(iterable=category.parent.subcategory, lookup_field='id', named_arg='category', )
         kb.generate_kb()
         kb.add(InlineKeyboardButton(text=f'<<{category.parent.title}', callback_data=f'back_{category.parent.id}'))
 
@@ -74,4 +93,12 @@ def go_back(call):
 
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    import time
+
+    bot.remove_webhook()
+    time.sleep(1)
+    a = bot.set_webhook(config.webhook_url,
+                        certificate=open('webhook_cert.pem', 'r'))
+
+    print(a)
+    app.run(debug=True)

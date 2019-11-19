@@ -33,25 +33,15 @@ class ReplyKB(ReplyKeyboardMarkup):
 
 class InlineKB(InlineKeyboardMarkup):
 
-    queries = {
-        'root': models.Category.get_root_categories()
-    }
-
-    def __init__(self, named_arg, lookup_field='id', title_field='title', row_width=3, iterable=None, key=None):
-        if all([iterable, key]):
-            raise ValueError('Only one of fields: iterable, key can be set')
+    def __init__(self, iterable, named_arg, lookup_field='id', title_field='title', row_width=3):
         super().__init__(row_width=row_width)
         self._iterable = iterable
         self._named_arg = named_arg
         self._lookup_field = lookup_field
         self._title_field = title_field
-        self._query = self.queries.get(key)
 
     def generate_kb(self):
         buttons = []
-
-        if not self._iterable:
-            self._iterable = self._query
 
         for i in self._iterable:
             buttons.append(InlineKeyboardButton(
