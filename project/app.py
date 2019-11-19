@@ -44,7 +44,7 @@ def show_categories(message):
     :param message:
     :return: listed root categories
     """
-    kb = keyboards.InlineKB(key='root', lookup_field='id', named_arg='category', )
+    kb = keyboards.InlineKB(key='root', lookup_field='id', named_arg='category')
     bot.send_message(message.chat.id, "Choose category", reply_markup=kb.generate_kb())
 
 
